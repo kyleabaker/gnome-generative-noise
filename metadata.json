@@ -1,0 +1,10 @@
+{
+  "uuid": "gnome-generative-noise-generator@kyleabaker.github.com",
+  "name": "GNOME Generative Noise",
+  "description": "Enterprise-grade procedural ambient noise generator with asynchronous process watchdogs, GSettings sync, and zero-looping math synthesis.",
+  "shell-version": ["45", "46", "47", "48", "49", "50", "51"],
+  "settings-schema": "org.gnome.shell.extensions.com.github.kyleabaker.gnome-generative-noise-generator",
+  "gettext-domain": "gnome-generative-noise-generator",
+  "url": "",
+  "version": 1
+}

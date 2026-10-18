@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <g fill="currentColor">
+    <!-- Tower 1 -->
+    <rect x="2" y="10" width="2.5" height="1" rx="0.3" />
+    <rect x="2" y="8" width="2.5" height="1" rx="0.3" />
+    <rect x="2" y="6" width="2.5" height="1" rx="0.3" />
+    
+    <!-- Tower 2 -->
+    <rect x="6.75" y="10" width="2.5" height="1" rx="0.3" />
+    <rect x="6.75" y="8" width="2.5" height="1" rx="0.3" />
+    <rect x="6.75" y="6" width="2.5" height="1" rx="0.3" />
+    <rect x="6.75" y="4" width="2.5" height="1" rx="0.3" />
+    <rect x="6.75" y="2" width="2.5" height="1" rx="0.3" />
+    
+    <!-- Tower 3 -->
+    <rect x="11.5" y="10" width="2.5" height="1" rx="0.3" />
+    <rect x="11.5" y="8" width="2.5" height="1" rx="0.3" />
+    <rect x="11.5" y="6" width="2.5" height="1" rx="0.3" />
+    <rect x="11.5" y="4" width="2.5" height="1" rx="0.3" />
+    
+    <!-- Smooth Wave Baseline -->
+    <path d="M 1 12.9 
+             C 4.5 10.4, 4.5 15.4, 8 12.9 
+             C 11.5 10.4, 11.5 15.4, 15 12.9 
+             A 0.6 0.6 0 0 1 15 14.1 
+             C 11.5 16.6, 11.5 11.6, 8 14.1 
+             C 4.5 16.6, 4.5 11.6, 1 14.1 
+             A 0.6 0.6 0 0 1 1 12.9 Z" />
+  </g>
+</svg>

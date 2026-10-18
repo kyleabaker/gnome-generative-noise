@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <g fill="currentColor">
+    <!-- Uniform Grid Equalizer Towers -->
+    <rect x="2" y="7" width="2.5" height="4" rx="0.5" />
+    <rect x="6.75" y="2" width="2.5" height="9" rx="0.5" />
+    <rect x="11.5" y="5" width="2.5" height="6" rx="0.5" />
+    
+    <!-- Sharp Angular Baseline -->
+    <path d="M 1 12.9 
+             L 4.35 12.9 
+             L 5.86 10.74 
+             L 7.8 13.56 
+             L 9.74 10.74 
+             L 11.25 12.9 
+             L 15 12.9 
+             A 0.6 0.6 0 0 1 15 14.1 
+             L 11.25 14.1 
+             L 9.74 11.96 
+             L 7.8 14.78 
+             L 5.86 11.96 
+             L 4.35 14.1 
+             L 1 14.1 
+             A 0.6 0.6 0 0 1 1 12.9 Z" />
+  </g>
+</svg>
