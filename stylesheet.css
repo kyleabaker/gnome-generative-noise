@@ -1,0 +1,47 @@
+/* ==========================================================================
+   GNOME Generative Noise
+   ========================================================================== */
+
+.split-button-container {
+  padding: 0;
+  spacing: 0;
+  margin: 4px 6px;
+  background-color: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  transition-duration: 200ms;
+}
+
+.split-button-main {
+  padding: 4px 10px;
+  border-radius: 6px 0 0 6px;
+  border: none;
+  background-color: transparent;
+}
+
+.split-main-content {
+  spacing: 6px;
+}
+
+.split-button-arrow {
+  padding: 4px 8px;
+  border-radius: 0 6px 6px 0;
+  border: none;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: transparent;
+}
+
+.split-button-container:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.split-button-main:active,
+.split-button-arrow:active,
+.split-button-main:checked {
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
+/* Active profile highlight in popup menu */
+.popup-menu-item.active-profile {
+  font-weight: bold;
+}

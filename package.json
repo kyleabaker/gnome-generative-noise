@@ -1,0 +1,35 @@
+{
+  "name": "GNOME Generative Noise",
+  "version": "1.0.0",
+  "description": "GNOME Generative Noise for white noise.",
+  "main": "extension.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write '**/*.{js,ts,xml,html,json,css,scss,yaml,yml,md}'"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kyleabaker/gnome-generative-noise.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "GPL-3.0-only",
+  "bugs": {
+    "url": "https://github.com/kyleabaker/gnome-generative-noise/issues"
+  },
+  "homepage": "https://github.com/kyleabaker/gnome-generative-noise#readme",
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@prettier/plugin-xml": "^3.4.2",
+    "eslint": "^10.13.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.7",
+    "prettier": "^3.9.10"
+  },
+  "dependencies": {
+    "npm-check-updates": "^23.1.1"
+  }
+}

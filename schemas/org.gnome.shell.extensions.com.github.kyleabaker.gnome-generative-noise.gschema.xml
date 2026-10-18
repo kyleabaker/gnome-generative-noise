@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<schemalist gettext-domain="gnome-generative-noise">
+  <schema
+    id="org.gnome.shell.extensions.com.github.kyleabaker.gnome-generative-noise"
+    path="/org/gnome/shell/extensions/com/github/kyleabaker/gnome-generative-noise/"
+  >
+    <key name="noise-type" type="s">
+      <default>'white-noise'</default>
+      <summary>Default Generative Noise Profile</summary>
+      <description>
+        Stores the user's preferred procedural noise algorithm type.
+      </description>
+    </key>
+    <key name="icon-style" type="s">
+      <default>'medium-sharp'</default>
+      <summary>Status Icon Style</summary>
+      <description>
+        Stores the user's preferred icon variation for the status panel and
+        quick settings toggle.
+      </description>
+    </key>
+    <key name="volume" type="d">
+      <default>0.7</default>
+      <summary>Audio Output Volume</summary>
+      <description>
+        Floating point volume multiplier ranging from 0.0 to 1.0.
+      </description>
+    </key>
+  </schema>
+</schemalist>
