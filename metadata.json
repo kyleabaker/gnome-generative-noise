@@ -1,10 +1,10 @@
 {
-  "uuid": "gnome-generative-noise-generator@kyleabaker.github.com",
+  "uuid": "gnome-generative-noise@kyleabaker.github.com",
   "name": "GNOME Generative Noise",
-  "description": "Enterprise-grade procedural ambient noise generator with asynchronous process watchdogs, GSettings sync, and zero-looping math synthesis.",
+  "description": "Procedural ambient noise generator using GStreamer math synthesis. Supports multiple noise profiles with persistent settings, sleep/wake awareness, and process watchdogs.",
   "shell-version": ["45", "46", "47", "48", "49", "50", "51"],
-  "settings-schema": "org.gnome.shell.extensions.com.github.kyleabaker.gnome-generative-noise-generator",
-  "gettext-domain": "gnome-generative-noise-generator",
-  "url": "",
+  "settings-schema": "org.gnome.shell.extensions.com.github.kyleabaker.gnome-generative-noise",
+  "gettext-domain": "gnome-generative-noise",
+  "url": "https://github.com/kyleabaker/gnome-generative-noise",
   "version": 1
 }

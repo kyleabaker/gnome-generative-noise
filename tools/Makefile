@@ -1,4 +1,4 @@
-# Makefile for GNOME gnome-generative-noise-generator Windows Extension
+# Makefile for GNOME Generative Noise Extension
 #
 # Usage:
 #   make -f tools/Makefile          # Builds the zip package (default)

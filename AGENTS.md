@@ -1,6 +1,6 @@
-# Agent & Developer Guidelines: Generative Noise Generator
+# Agent & Developer Guidelines: GNOME Generative Noise
 
-This document defines the coding standards, security requirements, architectural guidelines, and contribution rules for maintaining and extending the **Generative Noise Generator** GNOME Shell extension.
+This document defines the coding standards, security requirements, architectural guidelines, and contribution rules for maintaining and extending the **Generative Noise** GNOME Shell extension.
 
 ---
 

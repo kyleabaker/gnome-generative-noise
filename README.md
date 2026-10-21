@@ -1,21 +1,28 @@
-# Generative Noise Generator
+# GNOME Generative Noise
 
-**Generative Noise Generator** is a high-performance, 100% offline ambient noise extension for GNOME Shell. Unlike traditional audio players that rely on pre-recorded audio files prone to distracting repeating seams or clicks, this extension uses **procedural mathematical synthesis** via GStreamer to generate infinitely long, non-repeating ambient soundscapes on the fly.
+**GNOME Generative Noise** is a high-performance, 100% offline ambient noise extension for GNOME Shell. Unlike traditional audio players that rely on pre-recorded audio files prone to distracting repeating seams or clicks, this extension uses **procedural mathematical synthesis** via GStreamer to generate infinitely long, non-repeating ambient soundscapes on the fly.
 
-Designed specifically for the modern GNOME desktop, it features a native **split-button top bar interface** that provides instant one-click toggling alongside an intuitive dropdown menu for spectrum selection and settings management.
+Designed specifically for the modern GNOME desktop, it integrates natively into the **Quick Settings panel** with a toggle and dropdown submenu for instant one-click playback control and profile selection.
 
 ---
 
 ## Features
 
 - **True Procedural Generation:** Uses mathematical oscillators (`audiotestsrc`) to produce continuous, non-looping audio streams. Zero disk space required for audio assets.
-- **Multiple Noise Profiles:** Instantly switch between four distinct acoustic spectra:
+- **Extended Noise & Tone Library:** Instantly switch between ten distinct algorithmic sound profiles:
   - **White Noise:** Bright, equal-energy hiss (like classic static).
   - **Pink Noise:** Balanced, octave-equal hiss (softer, like heavy rainfall).
   - **Brown Noise:** Deep, rolling rumble (like a distant waterfall or heavy thunder).
   - **Blue Noise:** High-frequency boosted hiss.
-- **Split-Button Top Bar UI:** Click the left side/icon to toggle playback instantly; click the right arrow to open the configuration dropdown.
-- **Persistent Settings (GSettings):** Remembers your preferred noise profile and volume settings across sessions.
+  - **Gaussian Noise:** Pure statistical static.
+  - **Pure Tone (Sine Wave 440Hz):** Clean fundamental tone.
+  - **Retro Buzz (Square Wave):** Sharp 8-bit style buzz.
+  - **Synth Texture (Sawtooth Wave):** Rich harmonic sweep.
+  - **Soft Tone (Triangle Wave):** Mellow rounded tone.
+  - **Rhythmic Ticks (Clock/Metronome):** Steady rhythmic pulse.
+- **Quick Settings Integration:** A native `QuickMenuToggle` in the GNOME Quick Settings panel — click the toggle to start or stop playback, open the submenu to select a profile.
+- **Customizable Status Icons:** Choose from multiple icon styles via the preferences window.
+- **Persistent Settings (GSettings):** Remembers your preferred noise profile, volume, and icon style across sessions.
 - **Native Libadwaita Preferences Window:** Clean, HIG-compliant settings panel accessible right from the GNOME Extensions app.
 - **Suspend & Sleep Intelligence:** Automatically pauses audio when your system enters sleep/suspend, and safely restores state upon wake.
 - **Process Watchdogs:** Actively monitors background GStreamer processes to prevent zombie pipelines or UI desynchronization.
@@ -44,19 +51,19 @@ sudo apt install gstreamer1.0-tools gstreamer1.0-plugins-good
 
 1. Clone or download this repository into your local GNOME Shell extensions directory:
    ```bash
-   mkdir -p ~/.local/share/gnome-shell/extensions/gnome-generative-noise-generator@kyleabaker.github.com
+   mkdir -p ~/.local/share/gnome-shell/extensions/gnome-generative-noise@kyleabaker.github.com
    ```
 2. Place the following required files into that directory:
    - `metadata.json`
    - `extension.js`
    - `stylesheet.css`
    - `prefs.js`
-   - `schemas/org.gnome.shell.extensions.com.github.kyleabaker.gnome-generative-noise-generator.gschema.xml`
+   - `schemas/org.gnome.shell.extensions.com.github.kyleabaker.gnome-generative-noise.gschema.xml`
 
 3. Compile the GSettings schema so GNOME recognizes your persistent preferences:
 
    ```bash
-   glib-compile-schemas ~/.local/share/gnome-shell/extensions/gnome-generative-noise-generator@kyleabaker.github.com/schemas/
+   glib-compile-schemas ~/.local/share/gnome-shell/extensions/gnome-generative-noise@kyleabaker.github.com/schemas/
    ```
 
 4. **Restart GNOME Shell:**
@@ -65,23 +72,23 @@ sudo apt install gstreamer1.0-tools gstreamer1.0-plugins-good
 
 5. Enable the extension using the **Extensions** app or via terminal:
    ```bash
-   gnome-extensions enable gnome-generative-noise-generator@kyleabaker.github.com
+   gnome-extensions enable gnome-generative-noise@kyleabaker.github.com
    ```
 
 ---
 
 ## Usage Guide
 
-- **Toggle Playback:** Click the left section of the top bar widget (`Noise: Off` / profile name) to start or stop sound generation.
-- **Select Profile:** Click the small dropdown arrow on the right of the indicator to open the menu, then click any profile (White, Pink, Brown, or Blue) to hot-swap the algorithm instantly.
-- **Configure Defaults:** Open the **Extensions** app, locate _Generative Noise Generator_, and click the gear/preferences icon to adjust default startup profiles and output volume via the Libadwaita settings window.
+- **Toggle Playback:** Click the Generative Noise toggle in the Quick Settings panel to start or stop sound generation. A status indicator icon appears in the top bar during playback.
+- **Select Profile:** Open the toggle's submenu to choose from any of the ten available noise and tone profiles — the active profile is marked with a checkmark.
+- **Configure Defaults:** Open the **Extensions** app, locate _GNOME Generative Noise_, and click the gear/preferences icon to adjust default startup profiles, output volume, and icon style via the Libadwaita settings window.
 
 ---
 
 ## Architecture & Security
 
-- **Secure Process Spawning:** Uses array-based argument vectors (`GLib.spawn_async`) rather than raw shell string evaluation, providing absolute immunity to command injection vulnerabilities.
-- **Strict Memory Hygiene:** All signal listeners, GSettings connections, and DBus proxies are explicitly disconnected and cleaned up upon extension disable, ensuring zero memory leaks.
+- **Secure Process Spawning:** Uses `Gio.Subprocess` with array-based argument vectors rather than raw shell string evaluation, providing immunity to command injection vulnerabilities.
+- **Strict Memory Hygiene:** All signal listeners, GSettings connections, and D-Bus proxies are explicitly disconnected and cleaned up upon extension disable, ensuring zero memory leaks.
 
 ---
 

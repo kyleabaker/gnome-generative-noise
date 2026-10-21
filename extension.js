@@ -21,13 +21,13 @@ import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
  * @type {Object.<string, string>}
  */
 const ICON_MAP = {
-  'medium-sharp': 'noise-generator-medium-sharp-symbolic.svg',
-  'medium-wave': 'noise-generator-medium-wave-symbolic.svg',
-  'compact-sharp': 'noise-generator-compact-sharp-symbolic.svg',
-  'compact-wave': 'noise-generator-compact-wave-symbolic.svg',
-  'solid-sharp': 'noise-generator-solid-sharp-symbolic.svg',
-  'solid-centered': 'noise-generator-solid-centered-symbolic.svg',
-  default: 'noise-generator-symbolic.svg',
+  'medium-sharp': 'generative-noise-medium-sharp-symbolic.svg',
+  'medium-wave': 'generative-noise-medium-wave-symbolic.svg',
+  'compact-sharp': 'generative-noise-compact-sharp-symbolic.svg',
+  'compact-wave': 'generative-noise-compact-wave-symbolic.svg',
+  'solid-sharp': 'generative-noise-solid-sharp-symbolic.svg',
+  'solid-centered': 'generative-noise-solid-centered-symbolic.svg',
+  default: 'generative-noise-symbolic.svg',
 };
 
 /**
@@ -35,6 +35,81 @@ const ICON_MAP = {
  * @type {Set<string>}
  */
 const VALID_ICON_STYLES = new Set(Object.keys(ICON_MAP));
+
+/**
+ * Canonical list of supported algorithmic noise profiles and tone generators.
+ * This serves as the single source of truth for both UI menu construction and
+ * GSettings input validation (defense-in-depth against invalid profile strings).
+ * @type {Array<{name: string, shortName: string, type: string}>}
+ */
+const NOISE_PROFILES = [
+  {
+    name: 'White Noise (Bright Hiss)',
+    shortName: 'White Noise',
+    type: 'white-noise',
+  },
+  {
+    name: 'Pink Noise (Balanced Rain)',
+    shortName: 'Pink Noise',
+    type: 'pink-noise',
+  },
+  {
+    name: 'Brown Noise (Deep Rumble)',
+    shortName: 'Brown Noise',
+    type: 'red-noise',
+  },
+  {
+    name: 'Blue Noise (High Hiss)',
+    shortName: 'Blue Noise',
+    type: 'blue-noise',
+  },
+  {
+    name: 'Gaussian Noise (Pure Static)',
+    shortName: 'Gaussian Noise',
+    type: 'gaussian-noise',
+  },
+  {
+    name: 'Pure Tone (Sine Wave 440Hz)',
+    shortName: 'Pure Tone (Sine)',
+    type: 'sine',
+  },
+  {
+    name: 'Retro Buzz (Square Wave)',
+    shortName: 'Retro Buzz (Square)',
+    type: 'square',
+  },
+  {
+    name: 'Synth Texture (Sawtooth Wave)',
+    shortName: 'Synth Texture (Saw)',
+    type: 'saw',
+  },
+  {
+    name: 'Soft Tone (Triangle Wave)',
+    shortName: 'Soft Tone (Triangle)',
+    type: 'triangle',
+  },
+  {
+    name: 'Rhythmic Ticks (Clock/Metronome)',
+    shortName: 'Rhythmic Ticks',
+    type: 'ticks',
+  },
+];
+
+/**
+ * Whitelist set of valid noise type identifiers, derived from NOISE_PROFILES.
+ * Used for strict input validation of GSettings values before process argument construction.
+ * @type {Set<string>}
+ */
+const VALID_NOISE_TYPES = new Set(NOISE_PROFILES.map((p) => p.type));
+
+/**
+ * Derived lookup map from noise type identifiers to abbreviated display names
+ * for space-constrained UI elements (e.g. Quick Settings toggle title).
+ * @type {Map<string, string>}
+ */
+const NOISE_SHORT_NAMES = new Map(
+  NOISE_PROFILES.map((p) => [p.type, p.shortName])
+);
 
 /**
  * @class GenerativeNoiseToggle
@@ -51,10 +126,18 @@ const GenerativeNoiseToggle = GObject.registerClass(
         title: extension._currentNoiseName,
         gicon: extension._customGIcon,
         toggleMode: true,
+        accessibleName: 'GNOME Generative Noise',
       });
 
       this._extension = extension;
-      this._isPlaying = false;
+
+      /**
+       * Tracks the signal handler ID attached to the submenu header icon,
+       * ensuring proper disconnection on icon updates and widget destruction.
+       * @type {number|null}
+       * @private
+       */
+      this._headerIconSignalId = null;
 
       // Connect main toggle click to playback switching workflow
       this.connect('clicked', () => {
@@ -68,36 +151,26 @@ const GenerativeNoiseToggle = GObject.registerClass(
         'Select Profile'
       );
 
-      // Make the submenu header icon interactive to toggle playback on/off interchangeably
-      if (this.menu._headerIcon) {
-        this.menu._headerIcon.reactive = true;
-        this.menu._headerIcon.track_hover = true;
-        this.menu._headerIcon.connect('button-release-event', () => {
-          this._extension._togglePlayback();
-          return Clutter.EVENT_STOP;
-        });
-      }
+      // Make the submenu header icon interactive to toggle playback on/off
+      this._connectHeaderIcon();
 
-      // Supported algorithmic noise profiles and tone generators
-      this._profiles = [
-        { name: 'White Noise (Bright Hiss)', type: 'white-noise' },
-        { name: 'Pink Noise (Balanced Rain)', type: 'pink-noise' },
-        { name: 'Brown Noise (Deep Rumble)', type: 'red-noise' },
-        { name: 'Blue Noise (High Hiss)', type: 'blue-noise' },
-        { name: 'Gaussian Noise (Pure Static)', type: 'gaussian-noise' },
-        { name: 'Pure Tone (Sine Wave 440Hz)', type: 'sine' },
-        { name: 'Retro Buzz (Square Wave)', type: 'square' },
-        { name: 'Synth Texture (Sawtooth Wave)', type: 'saw' },
-        { name: 'Soft Tone (Triangle Wave)', type: 'triangle' },
-        { name: 'Rhythmic Ticks (Clock/Metronome)', type: 'ticks' },
-      ];
-
+      /**
+       * Map of noise type identifiers to their corresponding PopupMenuItem instances.
+       * @type {Object.<string, PopupMenu.PopupMenuItem>}
+       * @private
+       */
       this._menuItems = {};
+
+      /**
+       * Map of noise type identifiers to their full descriptive menu label strings.
+       * @type {Object.<string, string>}
+       * @private
+       */
       this._profileLabels = {};
 
-      // Populate submenu options dynamically
-      this._profiles.forEach((profile) => {
-        let menuItem = new PopupMenu.PopupMenuItem(profile.name);
+      // Populate submenu options from the canonical profiles constant
+      NOISE_PROFILES.forEach((profile) => {
+        const menuItem = new PopupMenu.PopupMenuItem(profile.name);
         this._profileLabels[profile.type] = profile.name;
 
         menuItem.connect('activate', () => {
@@ -109,6 +182,41 @@ const GenerativeNoiseToggle = GObject.registerClass(
     }
 
     /**
+     * Connects a click handler to the submenu header icon for playback toggling.
+     * Disconnects any previously attached handler to prevent signal accumulation.
+     * @private
+     */
+    _connectHeaderIcon() {
+      this._disconnectHeaderIcon();
+      if (this.menu._headerIcon) {
+        this.menu._headerIcon.reactive = true;
+        this.menu._headerIcon.track_hover = true;
+        this._headerIconSignalId = this.menu._headerIcon.connect(
+          'button-release-event',
+          () => {
+            this._extension._togglePlayback();
+            return Clutter.EVENT_STOP;
+          }
+        );
+      }
+    }
+
+    /**
+     * Disconnects the current header icon click handler if one is attached.
+     * @private
+     */
+    _disconnectHeaderIcon() {
+      if (this._headerIconSignalId !== null && this.menu._headerIcon) {
+        try {
+          this.menu._headerIcon.disconnect(this._headerIconSignalId);
+        } catch {
+          // Header icon instance may have been recreated or destroyed
+        }
+        this._headerIconSignalId = null;
+      }
+    }
+
+    /**
      * Updates the toggle button and submenu header icons dynamically.
      * @param {Gio.FileIcon} gicon - The new GIcon instance to apply.
      */
@@ -116,15 +224,8 @@ const GenerativeNoiseToggle = GObject.registerClass(
       this.gicon = gicon;
       if (this.menu) {
         this.menu.setHeader(gicon, 'Generative Noise', 'Select Profile');
-        // Re-apply interactivity flags if header icon instance is recreated on header update
-        if (this.menu._headerIcon) {
-          this.menu._headerIcon.reactive = true;
-          this.menu._headerIcon.track_hover = true;
-          this.menu._headerIcon.connect('button-release-event', () => {
-            this._extension._togglePlayback();
-            return Clutter.EVENT_STOP;
-          });
-        }
+        // Re-apply interactivity since setHeader may recreate the icon instance
+        this._connectHeaderIcon();
       }
     }
 
@@ -135,9 +236,8 @@ const GenerativeNoiseToggle = GObject.registerClass(
      * @param {string} noiseType - Machine-readable identifier of the active profile.
      */
     updateState(isPlaying, noiseName, noiseType) {
-      this._isPlaying = isPlaying;
       this.checked = isPlaying;
-      this.title = noiseName; // Keeps the selected profile name visible regardless of playing state
+      this.title = noiseName;
 
       // Refresh submenu checkmarks and active styling classes
       for (const [type, item] of Object.entries(this._menuItems)) {
@@ -152,6 +252,15 @@ const GenerativeNoiseToggle = GObject.registerClass(
           }
         }
       }
+    }
+
+    /**
+     * Cleans up signal handlers and extension references upon widget destruction.
+     */
+    destroy() {
+      this._disconnectHeaderIcon();
+      super.destroy();
+      this._extension = null;
     }
   }
 );
@@ -168,7 +277,6 @@ const GenerativeNoiseIndicator = GObject.registerClass(
      */
     _init(extension) {
       super._init();
-      this._extension = extension;
 
       // Create the top panel status tray icon
       this._indicator = this._addIndicator();
@@ -216,7 +324,8 @@ const GenerativeNoiseIndicator = GObject.registerClass(
 
 /**
  * @class GnomeGenerativeNoiseExtension
- * @brief Core extension lifecycle manager handling GStreamer subprocesses, GSettings bindings, and power hooks.
+ * @brief Core extension lifecycle manager handling GStreamer subprocesses, GSettings bindings,
+ *        and system power hooks.
  */
 export default class GnomeGenerativeNoiseExtension extends Extension {
   /**
@@ -234,7 +343,7 @@ export default class GnomeGenerativeNoiseExtension extends Extension {
     }
 
     this._settings = this.getSettings(
-      'org.gnome.shell.extensions.com.github.kyleabaker.gnome-generative-noise-generator'
+      'org.gnome.shell.extensions.com.github.kyleabaker.gnome-generative-noise'
     );
 
     // Resolve user icon style preference with fallback validation
@@ -247,32 +356,20 @@ export default class GnomeGenerativeNoiseExtension extends Extension {
 
     // Initialize state flags and identifiers
     this._isPlaying = false;
-    this._audioPid = null;
-    this._childWatchId = null;
+    this._subprocess = null;
     this._wasPlayingBeforeSleep = false;
     this._loginProxy = null;
     this._prepareForSleepId = null;
     this._settingsChangedId = null;
+    this._proxyCreationCancellable = null;
 
-    // Validate and load noise profile type
+    // Validate and load noise profile type against the canonical whitelist
     const rawNoiseType = this._settings.get_string('noise-type');
-    const validProfiles = new Set([
-      'white-noise',
-      'pink-noise',
-      'red-noise',
-      'blue-noise',
-      'gaussian-noise',
-      'sine',
-      'square',
-      'saw',
-      'triangle',
-      'ticks',
-    ]);
-    this._currentNoiseType = validProfiles.has(rawNoiseType)
+    this._currentNoiseType = VALID_NOISE_TYPES.has(rawNoiseType)
       ? rawNoiseType
       : 'white-noise';
 
-    // Validate and load volume multiplier setting
+    // Validate and clamp volume multiplier to safe bounds [0.0, 1.0]
     const rawVolume = this._settings.get_double('volume');
     this._currentVolume =
       typeof rawVolume === 'number' && !Number.isNaN(rawVolume)
@@ -296,7 +393,7 @@ export default class GnomeGenerativeNoiseExtension extends Extension {
       (settings, key) => {
         if (key === 'noise-type') {
           const newType = settings.get_string('noise-type');
-          if (validProfiles.has(newType)) {
+          if (VALID_NOISE_TYPES.has(newType)) {
             this._currentNoiseType = newType;
             this._currentNoiseName = this._getDisplayName(
               this._currentNoiseType
@@ -332,7 +429,7 @@ export default class GnomeGenerativeNoiseExtension extends Extension {
       }
     );
 
-    // Setup system sleep/resume lifecycle hooks via logind DBus proxy
+    // Setup system sleep/resume lifecycle hooks via logind D-Bus proxy
     this._setupPowerManagerListener();
   }
 
@@ -340,10 +437,11 @@ export default class GnomeGenerativeNoiseExtension extends Extension {
    * Resolves a Gio.FileIcon reference from an icon style key, with fallback handling.
    * @param {string} styleKey - The configuration key for the icon style.
    * @returns {Gio.FileIcon|Gio.ThemedIcon} The resolved icon instance.
+   * @private
    */
   _resolveIcon(styleKey) {
     const filename =
-      ICON_MAP[styleKey] || 'noise-generator-medium-sharp-symbolic.svg';
+      ICON_MAP[styleKey] || 'generative-noise-medium-sharp-symbolic.svg';
     const iconFile = this.dir.resolve_relative_path(
       `icons/scalable/status/${filename}`
     );
@@ -358,37 +456,19 @@ export default class GnomeGenerativeNoiseExtension extends Extension {
   }
 
   /**
-   * Maps internal noise profile keys to human-readable labels.
+   * Maps an internal noise profile type key to its abbreviated display name,
+   * derived from the canonical NOISE_PROFILES constant via NOISE_SHORT_NAMES.
    * @param {string} type - Machine identifier for the noise profile.
-   * @returns {string} Formatted display title.
+   * @returns {string} Abbreviated display title for space-constrained UI.
+   * @private
    */
   _getDisplayName(type) {
-    switch (type) {
-      case 'pink-noise':
-        return 'Pink Noise';
-      case 'red-noise':
-        return 'Brown Noise';
-      case 'blue-noise':
-        return 'Blue Noise';
-      case 'gaussian-noise':
-        return 'Gaussian Noise';
-      case 'sine':
-        return 'Pure Tone (Sine)';
-      case 'square':
-        return 'Retro Buzz (Square)';
-      case 'saw':
-        return 'Synth Texture (Saw)';
-      case 'triangle':
-        return 'Soft Tone (Triangle)';
-      case 'ticks':
-        return 'Rhythmic Ticks';
-      default:
-        return 'White Noise';
-    }
+    return NOISE_SHORT_NAMES.get(type) ?? 'White Noise';
   }
 
   /**
-   * Toggles audio stream playback state.
+   * Toggles audio stream playback state between playing and stopped.
+   * @private
    */
   _togglePlayback() {
     if (!this._isPlaying) {
@@ -404,53 +484,66 @@ export default class GnomeGenerativeNoiseExtension extends Extension {
   }
 
   /**
-   * Spawns the GStreamer background subprocess to generate procedural audio.
+   * Spawns a GStreamer subprocess via Gio.Subprocess to generate procedural audio.
+   * Uses Gio.Subprocess for automatic child reaping, direct signal delivery,
+   * and elimination of zombie process leaks.
+   * @private
    */
   _startAudioStream() {
     this._stopAudioStream();
 
     try {
-      let argv = [
+      // Defense-in-depth: re-validate noise type against the canonical whitelist
+      // immediately before constructing the process argument vector
+      if (!VALID_NOISE_TYPES.has(this._currentNoiseType)) {
+        throw new Error(
+          `Noise type "${this._currentNoiseType}" failed whitelist validation.`
+        );
+      }
+
+      // Construct GStreamer pipeline as array-based argv (per AGENTS.md §2).
+      // Property assignments use gst-launch key=value syntax within single
+      // argv elements; values are pre-validated against whitelists and bounds.
+      // Volume uses toFixed(4) to prevent floating-point precision artifacts
+      // (e.g. 0.30000000000000004) from reaching the GStreamer property parser.
+      const argv = [
         'gst-launch-1.0',
         'audiotestsrc',
         `wave=${this._currentNoiseType}`,
         '!',
         'volume',
-        `volume=${this._currentVolume}`,
+        `volume=${this._currentVolume.toFixed(4)}`,
         '!',
         'autoaudiosink',
       ];
 
-      let [success, pid] = GLib.spawn_async(
-        null,
-        argv,
-        null,
-        GLib.SpawnFlags.SEARCH_PATH | GLib.SpawnFlags.DO_NOT_REAP_CHILD,
-        null
+      this._subprocess = Gio.Subprocess.new(argv, Gio.SubprocessFlags.NONE);
+
+      this._isPlaying = true;
+      this._indicator.updateIndicatorState(
+        true,
+        this._currentNoiseName,
+        this._currentNoiseType
       );
 
-      if (success) {
-        this._audioPid = pid;
-        this._isPlaying = true;
-        this._indicator.updateIndicatorState(
-          true,
-          this._currentNoiseName,
-          this._currentNoiseType
-        );
+      // Monitor subprocess lifecycle asynchronously. Gio.Subprocess handles
+      // child reaping automatically, preventing the zombie process leaks
+      // inherent to the GLib.spawn_async + DO_NOT_REAP_CHILD pattern.
+      const activeSubprocess = this._subprocess;
+      activeSubprocess.wait_async(null, (proc, result) => {
+        try {
+          proc.wait_finish(result);
+        } catch {
+          // Subprocess was already reaped or the wait was cancelled
+        }
 
-        // Watch child process termination to handle unexpected exits cleanly
-        this._childWatchId = GLib.child_watch_add(
-          GLib.PRIORITY_DEFAULT,
-          pid,
-          (pid, status) => {
-            this._childWatchId = null;
-            this._onProcessExited(status);
-            return GLib.SOURCE_REMOVE;
-          }
-        );
-      } else {
-        throw new Error('Spawn execution returned failure flag.');
-      }
+        // Only update UI state if this subprocess is still the active one;
+        // a newer stream may have already replaced it during profile switching
+        if (this._subprocess === activeSubprocess) {
+          this._subprocess = null;
+          this._onProcessExited(proc.get_exit_status());
+        }
+      });
     } catch (e) {
       console.error(`[GenerativeNoise] Stream execution failed: ${e.message}`);
       Main.notifyError(
@@ -458,17 +551,19 @@ export default class GnomeGenerativeNoiseExtension extends Extension {
         'Could not initialize procedural audio stream.'
       );
       this._isPlaying = false;
+      this._subprocess = null;
     }
   }
 
   /**
    * Handles asynchronous exit events from the GStreamer subprocess.
-   * @param {number} status - Exit status code.
+   * Resets playback state and synchronizes the panel indicator.
+   * @param {number} status - Raw waitpid exit status code.
+   * @private
    */
   _onProcessExited(status) {
     if (!this._indicator) return;
-    console.log(`_onProcessExited status: ${status}`);
-    this._audioPid = null;
+    console.debug(`[GenerativeNoise] Process exited with status: ${status}`);
     this._isPlaying = false;
     this._indicator.updateIndicatorState(
       false,
@@ -478,76 +573,84 @@ export default class GnomeGenerativeNoiseExtension extends Extension {
   }
 
   /**
-   * Terminates the active GStreamer audio generation subprocess safely.
+   * Terminates the active GStreamer subprocess safely via direct SIGTERM delivery.
+   * Uses Gio.Subprocess.send_signal() instead of spawning a separate `kill` process,
+   * providing reliable signal delivery without transient process overhead.
+   * @private
    */
   _stopAudioStream() {
-    if (this._childWatchId) {
-      GLib.source_remove(this._childWatchId);
-      this._childWatchId = null;
-    }
-
-    if (this._audioPid !== null) {
+    if (this._subprocess) {
       try {
-        GLib.spawn_async(
-          null,
-          ['kill', '-15', String(this._audioPid)],
-          null,
-          GLib.SpawnFlags.SEARCH_PATH,
-          null
-        );
+        this._subprocess.send_signal(15); // SIGTERM
       } catch (e) {
-        console.error(
-          `[GenerativeNoise] Failed to kill PID ${this._audioPid}: ${e.message}`
-        );
+        // Process may have already exited naturally before signal delivery
+        console.debug(`[GenerativeNoise] Signal delivery note: ${e.message}`);
       }
-      this._audioPid = null;
+      this._subprocess = null;
     }
     this._isPlaying = false;
   }
 
   /**
-   * Binds system power state signals (PrepareForSleep) to automatically pause/resume audio playback.
+   * Binds system power state signals (PrepareForSleep) to automatically
+   * pause and resume audio playback across sleep/wake cycles.
+   * Uses asynchronous D-Bus proxy construction to avoid blocking the
+   * GNOME Shell compositor main thread.
+   * @private
    */
   _setupPowerManagerListener() {
     try {
-      const proxy = Gio.DBusProxy.new_for_bus_sync(
+      this._proxyCreationCancellable = new Gio.Cancellable();
+      Gio.DBusProxy.new_for_bus(
         Gio.BusType.SYSTEM,
         Gio.DBusProxyFlags.NONE,
         null,
         'org.freedesktop.login1',
         '/org/freedesktop/login1',
         'org.freedesktop.login1.Manager',
-        null
-      );
+        this._proxyCreationCancellable,
+        (_source, result) => {
+          try {
+            const proxy = Gio.DBusProxy.new_for_bus_finish(result);
 
-      if (!this._settings) return;
+            // Guard: extension may have been disabled during async proxy construction
+            if (!this._settings) return;
 
-      this._loginProxy = proxy;
-      this._prepareForSleepId = this._loginProxy.connect(
-        'g-signal',
-        (proxy, senderName, signalName, parameters) => {
-          if (signalName === 'PrepareForSleep') {
-            let [isSleeping] = parameters.get_child_value(0).get_boolean();
-            if (isSleeping && this._isPlaying) {
-              this._stopAudioStream();
-              this._wasPlayingBeforeSleep = true;
-            } else if (!isSleeping && this._wasPlayingBeforeSleep) {
-              this._startAudioStream();
-              this._wasPlayingBeforeSleep = false;
-            }
+            this._loginProxy = proxy;
+            this._prepareForSleepId = this._loginProxy.connect(
+              'g-signal',
+              (_proxy, _senderName, signalName, parameters) => {
+                if (signalName === 'PrepareForSleep') {
+                  const isSleeping = parameters
+                    .get_child_value(0)
+                    .get_boolean();
+                  if (isSleeping && this._isPlaying) {
+                    this._stopAudioStream();
+                    this._wasPlayingBeforeSleep = true;
+                  } else if (!isSleeping && this._wasPlayingBeforeSleep) {
+                    this._startAudioStream();
+                    this._wasPlayingBeforeSleep = false;
+                  }
+                }
+              }
+            );
+          } catch (e) {
+            console.warn(
+              `[GenerativeNoise] Could not bind to login1 power manager: ${e.message}`
+            );
           }
         }
       );
     } catch (e) {
       console.warn(
-        `[GenerativeNoise] Could not bind to login1 power manager: ${e.message}`
+        `[GenerativeNoise] Could not initiate login1 proxy creation: ${e.message}`
       );
     }
   }
 
   /**
-   * Extension deactivation routine. Cleans up audio streams, disconnects settings listeners,
-   * unbinds DBus proxies, and destroys UI elements.
+   * Extension deactivation routine. Cleans up audio streams, disconnects settings
+   * listeners, unbinds D-Bus proxies, and destroys UI elements.
    */
   disable() {
     this._stopAudioStream();
@@ -559,19 +662,28 @@ export default class GnomeGenerativeNoiseExtension extends Extension {
 
     if (this._settings && this._settingsChangedId) {
       this._settings.disconnect(this._settingsChangedId);
+      this._settingsChangedId = null;
       this._settings = null;
+    }
+
+    // Cancel any in-flight async D-Bus proxy creation to prevent stale
+    // callbacks from firing after re-enable and leaking duplicate handlers
+    if (this._proxyCreationCancellable) {
+      this._proxyCreationCancellable.cancel();
+      this._proxyCreationCancellable = null;
     }
 
     if (this._prepareForSleepId && this._loginProxy) {
       try {
         this._loginProxy.disconnect(this._prepareForSleepId);
       } catch {
-        // Suppress errors during teardown
+        // Suppress errors during teardown if proxy was already invalidated
       }
       this._prepareForSleepId = null;
       this._loginProxy = null;
     }
 
     this._customGIcon = null;
+    this._wasPlayingBeforeSleep = false;
   }
 }

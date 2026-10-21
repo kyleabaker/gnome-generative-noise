@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<schemalist gettext-domain="gnome-generative-noise-generator">
+<schemalist gettext-domain="gnome-generative-noise">
   <schema
-    id="org.gnome.shell.extensions.com.github.kyleabaker.gnome-generative-noise-generator"
-    path="/org/gnome/shell/extensions/com/github/kyleabaker/gnome-generative-noise-generator/"
+    id="org.gnome.shell.extensions.com.github.kyleabaker.gnome-generative-noise"
+    path="/org/gnome/shell/extensions/com/github/kyleabaker/gnome-generative-noise/"
   >
     <key name="noise-type" type="s">
       <default>'white-noise'</default>

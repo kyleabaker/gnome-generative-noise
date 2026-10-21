@@ -36,6 +36,6 @@ jobs:
       - name: Upload Build Artifact (Optional)
         uses: actions/upload-artifact@v7
         with:
-          name: gnome-generative-noise-generator-build
+          name: gnome-generative-noise-build
           path: dist/*.zip
           retention-days: 5

@@ -1,6 +1,6 @@
 /**
  * @file prefs.js
- * @brief Preferences window for Generative Noise Generator (Libadwaita)
+ * @brief Preferences window for GNOME Generative Noise (Libadwaita)
  * @description Provides a native, HIG-compliant settings panel for configuring
  *              all procedural noise algorithms, output volume, and icon styles
  *              using consistent Adw.ComboRow implementations with visual previews.
@@ -87,7 +87,7 @@ export default class GenerativeNoisePreferences extends ExtensionPreferences {
     window.set_default_size(780, 620);
 
     const settings = this.getSettings(
-      'org.gnome.shell.extensions.com.github.kyleabaker.gnome-generative-noise-generator'
+      'org.gnome.shell.extensions.com.github.kyleabaker.gnome-generative-noise'
     );
 
     const page = new Adw.PreferencesPage();
@@ -211,37 +211,37 @@ export default class GenerativeNoisePreferences extends ExtensionPreferences {
       {
         key: 'medium-sharp',
         label: _('Equalizer Towers - Medium LED & Sharp Wave (Default)'),
-        filename: 'noise-generator-medium-sharp-symbolic.svg',
+        filename: 'generative-noise-medium-sharp-symbolic.svg',
       },
       {
         key: 'medium-wave',
         label: _('Equalizer Towers - Medium LED & Smooth Wave'),
-        filename: 'noise-generator-medium-wave-symbolic.svg',
+        filename: 'generative-noise-medium-wave-symbolic.svg',
       },
       {
         key: 'compact-sharp',
         label: _('Equalizer Towers - Compact Micro & Sharp Wave'),
-        filename: 'noise-generator-compact-sharp-symbolic.svg',
+        filename: 'generative-noise-compact-sharp-symbolic.svg',
       },
       {
         key: 'compact-wave',
         label: _('Equalizer Towers - Compact Micro & Smooth Wave'),
-        filename: 'noise-generator-compact-wave-symbolic.svg',
+        filename: 'generative-noise-compact-wave-symbolic.svg',
       },
       {
         key: 'solid-sharp',
         label: _('Solid Towers - Sharp Wave'),
-        filename: 'noise-generator-solid-sharp-symbolic.svg',
+        filename: 'generative-noise-solid-sharp-symbolic.svg',
       },
       {
         key: 'solid-centered',
         label: _('Solid Towers - Centered (No Baseline)'),
-        filename: 'noise-generator-solid-centered-symbolic.svg',
+        filename: 'generative-noise-solid-centered-symbolic.svg',
       },
       {
         key: 'default',
         label: _('Minimal - Standard Symbolic (No Segments)'),
-        filename: 'noise-generator-symbolic.svg',
+        filename: 'generative-noise-symbolic.svg',
       },
     ];
 
